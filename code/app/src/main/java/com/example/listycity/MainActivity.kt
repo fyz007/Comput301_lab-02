@@ -5,6 +5,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -30,6 +31,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.listycity.ui.theme.LIstyCityTheme
 
+
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -43,6 +45,7 @@ class MainActivity : ComponentActivity() {
                     CityListScreen(
                         cities = cityRepository.cities,
                         onAddCity = {cityRepository.addCity(it)},
+                        onDeleteCity = { cityRepository.deleteCity(it) },
                         modifier = Modifier.padding(innerPadding)
                     )
                 }
@@ -51,21 +54,7 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-@Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
-    )
-}
 
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    LIstyCityTheme {
-        Greeting("Android")
-    }
-}
 class CityRepository {
     private val _cities = mutableStateListOf(
         "Edmonton", "Vancouver", "GuangZhou", "ShenYang",
@@ -77,15 +66,20 @@ class CityRepository {
     fun addCity(city: String) {
         _cities.add(city)
     }
+    fun deleteCity(city: String) {
+        _cities.remove(city)
+    }
 }
 
 @Composable
 fun CityListScreen(
     cities: List<String>,
     onAddCity:(String) -> Unit,
+    onDeleteCity: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
     var newCityName by remember { mutableStateOf(value = "") }
+    var selectCity by remember { mutableStateOf<String?>(null) }
 
     Column(modifier = modifier.fillMaxSize()){
         Row(modifier = modifier.padding(16.dp)){
@@ -95,7 +89,7 @@ fun CityListScreen(
                 label = {Text("City name")},
                 modifier = modifier.weight(1f)
             )
-            Spacer(modifier = modifier.width(10.dp))
+            Spacer(modifier = modifier.width(8.dp))
 
             Button(
                 onClick = {
@@ -108,22 +102,40 @@ fun CityListScreen(
                 Text("Add City")
             }
         }
+        Button(
+            onClick = {
+                selectCity?.let {
+                    onDeleteCity(it)
+                    selectCity = null
+                }
+            },
+            enabled = selectCity != null
+        ) {
+            Text("Delete City")
+        }
 
-        LazyColumn(modifier = modifier.fillMaxSize()) {
-            items(cities){city ->
-                CityRow(city = city)
-
+        LazyColumn(modifier = Modifier.fillMaxSize()) {
+            items(cities) { city ->
+                CityRow(
+                    city = city,
+                    onDoubleClick = {
+                        selectCity = city
+                    }
+                )
             }
         }
-    }
-}
+    } // Closes Column
+}     // Closes CityListScreen
 
 @Composable
-fun CityRow(city: String){
+fun CityRow(
+    city: String,
+    onDoubleClick: () -> Unit
+) {
     Text(
         text = city,
         fontSize = 28.sp,
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 18.dp, vertical = 18.dp)
+        modifier = Modifier.fillMaxWidth().combinedClickable(onClick = {}, onDoubleClick = onDoubleClick).padding(horizontal = 18.dp, vertical = 18.dp)
     )
 }
 
